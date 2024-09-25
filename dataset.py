@@ -16,17 +16,6 @@ class FPRCRDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return self.reac_fps[idx],self.prod_fps[idx], self.labels[idx]
     
-class SmilesDataset(torch.utils.data.Dataset):
-    def __init__(self, smiles, labels):
-        super(SmilesDataset, self).__init__()
-        self.reactions = smiles
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.reactions)
-
-    def __getitem__(self, idx):
-        return self.reactions[idx], self.labels[idx]
 
 
 def FPRCR_collate_fn(batch):
