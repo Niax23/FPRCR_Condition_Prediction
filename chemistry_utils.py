@@ -3,6 +3,7 @@ from rdkit.Chem import AllChem
 from rdkit.DataStructs import ExplicitBitVect
 from rdkit.DataStructs import ConvertToNumpyArray
 import numpy as np
+import torch
 
 
 def canonical_smiles(x):
@@ -36,4 +37,4 @@ def calculate_reaction_and_product_fps(reac, prod):
     prod_array = np.zeros((16384,), dtype=int)
     ConvertToNumpyArray(product_fp, prod_array)
 
-    return reaction_fp, product_fp
+    return torch.tensor(np.concatenate((reac_array, prod_array)),dtype=torch.float32)

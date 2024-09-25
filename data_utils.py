@@ -6,7 +6,7 @@ from chemistry_utils import canonical_smiles, calculate_reaction_and_product_fps
 import torch
 import numpy as np
 import random
-
+import pickle
 
 
 def clk_x(x):
@@ -72,7 +72,111 @@ def parse_uspto_condition_data(data_path, verbose=True):
 
     return all_data,  cat2idx, sov12idx, sov22idx, reg12idx, reg22idx
 
+def parse_uspto_condition_with_dict(data_path, dict_path, verbose=True):
+    with open(data_path) as Fin:
+        raw_info = json.load(Fin)
+    cats = set()
+    sov1s = set()
+    sov2s = set()
+    reg1s = set()
+    reg2s = set()
+    iterx = tqdm(raw_info) if verbose else raw_info
+    for i, element in enumerate(iterx):
+        cat = clk_x(element['new']['catalyst'])
+        sov1 = clk_x(element['new']['solvent1'])
+        sov2 = clk_x(element['new']['solvent2'])
+        reg1 = clk_x(element['new']['reagent1'])
+        reg2 = clk_x(element['new']['reagent2'])
+        cats.add(cat)
+        sov1s.add(sov1)
+        sov2s.add(sov2)
+        reg1s.add(reg1)
+        reg2s.add(reg2)
 
+    all_data = {'train_data': [], 'val_data': [], 'test_data': []}
+    cat2idx = {k: idx for idx, k in enumerate(cats)}
+    sov12idx = {k: idx for idx, k in enumerate(sov1s)}
+    sov22idx = {k: idx for idx, k in enumerate(sov2s)}
+    cat2idx = {k: idx for idx, k in enumerate(cats)}
+    reg12idx = {k: idx for idx, k in enumerate(reg1s)}
+    reg22idx = {k: idx for idx, k in enumerate(reg2s)}
+
+
+    iterx = tqdm(raw_info) if verbose else raw_info
+    with open(dict_path, 'rb') as fin:
+        dict = pickle.load(fin)
+    for i, element in enumerate(iterx):
+        rxn_type = element['dataset']
+        labels = [
+            cat2idx[clk_x(element['new']['catalyst'])],
+            sov12idx[clk_x(element['new']['solvent1'])],
+            sov22idx[clk_x(element['new']['solvent2'])],
+            reg12idx[clk_x(element['new']['reagent1'])],
+            reg22idx[clk_x(element['new']['reagent2'])]
+        ]
+        smiles = element['new']['canonical_rxn']
+        reac_FP, prod_FP = dict[smiles]['reac'], dict[smiles]['prod']
+
+        this_line = {
+            'canonical_rxn': element['new']['canonical_rxn'],
+            'react_fp': reac_FP,
+            'prod_fp': prod_FP,
+            'label': labels,
+            'mapped_rxn': element['new']['mapped_rxn']
+        }
+        all_data[f'{rxn_type}_data'].append(this_line)
+
+    return all_data,  cat2idx, sov12idx, sov22idx, reg12idx, reg22idx
+
+def parse_uspto_condition_without_fp(data_path, verbose=True):
+    with open(data_path) as Fin:
+        raw_info = json.load(Fin)
+    cats = set()
+    sov1s = set()
+    sov2s = set()
+    reg1s = set()
+    reg2s = set()
+    iterx = tqdm(raw_info) if verbose else raw_info
+    for i, element in enumerate(iterx):
+        cat = clk_x(element['new']['catalyst'])
+        sov1 = clk_x(element['new']['solvent1'])
+        sov2 = clk_x(element['new']['solvent2'])
+        reg1 = clk_x(element['new']['reagent1'])
+        reg2 = clk_x(element['new']['reagent2'])
+        cats.add(cat)
+        sov1s.add(sov1)
+        sov2s.add(sov2)
+        reg1s.add(reg1)
+        reg2s.add(reg2)
+
+    all_data = {'train_data': [], 'val_data': [], 'test_data': []}
+    cat2idx = {k: idx for idx, k in enumerate(cats)}
+    sov12idx = {k: idx for idx, k in enumerate(sov1s)}
+    sov22idx = {k: idx for idx, k in enumerate(sov2s)}
+    cat2idx = {k: idx for idx, k in enumerate(cats)}
+    reg12idx = {k: idx for idx, k in enumerate(reg1s)}
+    reg22idx = {k: idx for idx, k in enumerate(reg2s)}
+
+
+    iterx = tqdm(raw_info) if verbose else raw_info
+    for i, element in enumerate(iterx):
+        rxn_type = element['dataset']
+        labels = [
+            cat2idx[clk_x(element['new']['catalyst'])],
+            sov12idx[clk_x(element['new']['solvent1'])],
+            sov22idx[clk_x(element['new']['solvent2'])],
+            reg12idx[clk_x(element['new']['reagent1'])],
+            reg22idx[clk_x(element['new']['reagent2'])]
+        ]
+
+        this_line = {
+            'canonical_rxn': element['new']['canonical_rxn'],
+            'label': labels,
+            'mapped_rxn': element['new']['mapped_rxn']
+        }
+        all_data[f'{rxn_type}_data'].append(this_line)
+
+    return all_data,  cat2idx, sov12idx, sov22idx, reg12idx, reg22idx
 
 def fix_seed(seed):
     random.seed(seed)

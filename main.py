@@ -2,10 +2,10 @@ import torch
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ExponentialLR
 
-from data_utils import fix_seed, parse_uspto_condition_data
+from data_utils import fix_seed, parse_uspto_condition_data, parse_uspto_condition_with_dict, parse_uspto_condition_without_fp
 from data_utils import check_early_stop
 
-from dataset import FPRCRDataset, FPRCR_collate_fn
+from dataset import FPRCRDataset, FPRCR_collate_fn, SmilesDataset, smiles_collate_fn
 
 
 from model import FPRCR_Model
@@ -93,6 +93,7 @@ if __name__ == '__main__':
         help='the path containing the data'
     )
 
+
     args = parser.parse_args()
     print(args)
 
@@ -105,43 +106,46 @@ if __name__ == '__main__':
 
     log_dir, model_dir, token_dir = make_dir(args)
 
-    all_data,  cat_mapper, sov1_mapper, sov2_mapper, reg1_mapper, reg2_mapper = parse_uspto_condition_data(
+    #all_data,  cat_mapper, sov1_mapper, sov2_mapper, reg1_mapper, reg2_mapper = parse_uspto_condition_data(
+    #    args.data_path)
+    
+    #all_data,  cat_mapper, sov1_mapper, sov2_mapper, reg1_mapper, reg2_mapper = parse_uspto_condition_data(
+    #    args.data_path, args.dict_path)
+
+    all_data,  cat_mapper, sov1_mapper, sov2_mapper, reg1_mapper, reg2_mapper = parse_uspto_condition_without_fp(
         args.data_path)
 
     print(cat_mapper)
 
-    train_set = FPRCRDataset(
-        reacs=[x['react_fp'] for x in all_data['train_data']],
-        prods=[x['prod_fp'] for x in all_data['train_data']],
+    train_set = SmilesDataset(
+        smiles=[x['canonical_rxn'] for x in all_data['train_data']],
         labels=[x['label'] for x in all_data['train_data']]
     )
 
-    val_set = FPRCRDataset(
-        reacs=[x['react_fp'] for x in all_data['val_data']],
-        prods=[x['prod_fp'] for x in all_data['val_data']],
+    val_set = SmilesDataset(
+        smiles=[x['canonical_rxn'] for x in all_data['val_data']],
         labels=[x['label'] for x in all_data['val_data']]
     )
 
-    test_set = FPRCRDataset(
-        reacs=[x['react_fp'] for x in all_data['test_data']],
-        prods=[x['prod_fp'] for x in all_data['test_data']],
+    test_set = SmilesDataset(
+        smiles=[x['canonical_rxn'] for x in all_data['test_data']],
         labels=[x['label'] for x in all_data['test_data']]
     )
 
     train_loader = DataLoader(
         train_set, batch_size=args.bs, num_workers=args.num_workers,
-        shuffle=True, collate_fn=FPRCR_collate_fn
+        shuffle=True, collate_fn=smiles_collate_fn
     )
 
     val_loader = DataLoader(
         val_set, batch_size=args.bs, num_workers=args.num_workers,
-        shuffle=False, collate_fn=FPRCR_collate_fn
+        shuffle=False, collate_fn=smiles_collate_fn
 
     )
 
     test_loader = DataLoader(
         test_set, batch_size=args.bs, num_workers=args.num_workers,
-        shuffle=False, collate_fn=FPRCR_collate_fn
+        shuffle=False, collate_fn=smiles_collate_fn
     )
 
     model = FPRCR_Model(catalyst_classes=len(cat_mapper), solvent1_classes=len(sov1_mapper),

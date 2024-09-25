@@ -75,20 +75,20 @@ class FPRCR_Model(nn.Module):
             nn.Linear(300, reagent2_classes)
         )
 
-    def forward(self, product_fp, reaction_fp):
+    def forward(self, fp):
         # Concatenate product and reaction fingerprints
         # print(reaction_fp.shape)
+        #print("here")
+        #print(fp.dtype)
 
-        x = torch.cat((product_fp, reaction_fp), dim=1)
-
-        dense_fp = self.fp_layers(x)
+        dense_fp = self.fp_layers(fp)
 
         catalyst_pred = self.catalyst_layers(dense_fp)
 
         cat_one_hot = F.one_hot(torch.argmax(
             catalyst_pred, dim=1), num_classes=catalyst_pred.shape[1]).float()
-        print(catalyst_pred)
-        print(cat_one_hot)
+        #print(catalyst_pred)
+        #print(cat_one_hot)
 
         # Solvent 1 prediction
         solvent1_input = torch.cat(

@@ -46,15 +46,12 @@ def train_uspto_condition(loader, model, optimizer, device, warmup=False):
         warmup_sher = warmup_lr_scheduler(optimizer, warmup_iters, 5e-2)
 
     for data in tqdm(loader):
-        reac_fps, prod_fps, labels = data
+        fps, labels = data
 
-        reac_fps = reac_fps.to(device)
-        prod_fps = prod_fps.to(device)
+        fps = fps.to(device)
         labels = labels.to(device)
 
-        res = model(
-            prod_fps, reac_fps
-        )
+        res = model(fps)
 
         loss = calc_loss(res, labels)
         loss.backward()
@@ -70,16 +67,15 @@ def train_uspto_condition(loader, model, optimizer, device, warmup=False):
 def eval_uspto_condition(loader, model, device):
     model, accs, gt = model.eval(), [], []
     for data in tqdm(loader):
-        reac_fps, prod_fps, labels = data
+        fps, labels = data
 
-        reac_fps = reac_fps.to(device)
-        prod_fps = prod_fps.to(device)
+        fps = fps.to(device)
         labels = labels.to(device)
 
+        
+
         with torch.no_grad():
-            res = model(
-                prod_fps, reac_fps
-            )
+            res = model(fps)
             result = convert_log_into_label(res, mod='softmax')
 
         accs.append(result)
